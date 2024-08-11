@@ -63,6 +63,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   const messageRef = useRef();
   const connectionsRef = useRef([]);
   const isHostRef = useRef(isHost);
+  const usersRef = useRef(users);
 
   useEffect(() => {
     isHostRef.current = isHost;
@@ -159,9 +160,11 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   };
 
   const handleStartGame = () => {
-    const data = { type: 'start' };
-    connectionsRef.current.forEach(connection => connection.send(data));
-    setGameStarted(true);
+    if (users.every(user => user.id === peerId || user.ready)) {
+      const data = { type: 'start' };
+      connectionsRef.current.forEach(connection => connection.send(data));
+      setGameStarted(true);
+    }
   };
 
   const broadcastUserList = () => {
@@ -188,7 +191,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
             </ul>
             <div>
               {isHost ? (
-                <button onClick={handleStartGame} disabled={!users.every(user => user.ready)}>게임 시작</button>
+                <button onClick={handleStartGame} disabled={!users.every(user => user.id === peerId || user.ready)}>게임 시작</button>
               ) : (
                 <button onClick={handleReady} disabled={ready}>준비 완료</button>
               )}
@@ -216,6 +219,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
     </div>
   );
 };
+
 
 const GamePage = ({ users }) => (
   <div className="game-page">
