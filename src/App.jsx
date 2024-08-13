@@ -91,14 +91,12 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
       connection.peerConnection.oniceconnectionstatechange = () => {
         const state = connection.peerConnection.iceConnectionState;
         if (state === 'disconnected' || state === 'failed') {
-          console.log(`Peer ${connection.peer} is disconnected`);
           connections.current = connections.current.filter(conn => conn.peer !== connection.peer);
           setUsers(prevUsers => prevUsers.filter(user => user.id !== connection.peer));
         }
       };
 
       connection.on('open', () => {
-        console.log('Connection opened:', connection.peer);
         connections.current.push(connection);
         connection.send({ type: 'user', user: { id: connection.peer, name: nickname, ready: false } });
       });
@@ -106,6 +104,10 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
 
     return () => newPeer.destroy();
   }, [roomId, isCreatingRoom, nickname, setPeerId]);
+
+  useEffect(() => {
+    if (isHost.current) broadcastUserList();
+  }, [users]);
 
   const handleData = (data, connection) => {
     switch (data.type) {
@@ -176,10 +178,6 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
     const data = { type: 'user-list', users };
     connections.current.forEach(connection => connection.send(data));
   };
-
-  useEffect(() => {
-    if (isHost.current) broadcastUserList();
-  }, [users]);
 
   return (
     <div className="chat-room">
