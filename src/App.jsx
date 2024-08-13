@@ -57,17 +57,12 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [ready, setReady] = useState(false);
-  const [isHost, setIsHost] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentRoomId, setCurrentRoomId] = useState('');
   const messageRef = useRef();
-  const connectionsRef = useRef([]);
-  const isHostRef = useRef(isHost);
+  const connections = useRef([]);
+  const isHost = useRef(false);
   const usersRef = useRef(users);
-
-  useEffect(() => {
-    isHostRef.current = isHost;
-  }, [isHost]);
 
   useEffect(() => {
     const newPeer = new Peer();
@@ -77,15 +72,15 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
       setPeerId(id);
       if (isCreatingRoom) {
         setCurrentRoomId(id);
-        setIsHost(true);
+        isHost.current = true;
         setUsers([{ id, name: nickname, ready: false }]);
       } else {
         setCurrentRoomId(roomId);
-        const connection = newPeer.connect(roomId);
-        connection.on('open', () => {
-          connectionsRef.current.push(connection);
-          connection.on('data', data => handleData(data, connection));
-          connection.send({ type: 'user', user: { id, name: nickname, ready: false } });
+        const con = newPeer.connect(roomId);
+        con.on('open', () => {
+          connections.current.push(con);
+          con.on('data', data => handleData(data, con));
+          con.send({ type: 'user', user: { id, name: nickname, ready: false } });
         });
       }
     });
@@ -93,7 +88,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
     newPeer.on('connection', connection => {
       connection.on('data', data => handleData(data, connection));
       connection.on('open', () => {
-        connectionsRef.current.push(connection);
+        connections.current.push(connection);
         connection.send({ type: 'user', user: { id: connection.peer, name: nickname, ready: false } });
       });
     });
@@ -105,7 +100,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
     switch (data.type) {
       case 'message':
         setMessages(prevMessages => [...prevMessages, { from: data.from, text: data.text }]);
-        if (isHostRef.current) broadcastMessage(data, connection.peer);
+        if (isHost.current) broadcastMessage(data, connection.peer);
         break;
       case 'user':
         setUsers(prevUsers => {
@@ -114,7 +109,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
           }
           return prevUsers;
         });
-        if (isHostRef.current) broadcastUserList();
+        if (isHost.current) broadcastUserList();
         break;
       case 'user-list':
         setUsers(data.users);
@@ -123,7 +118,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
         setUsers(prevUsers =>
           prevUsers.map(user => user.id === data.id ? { ...user, ready: true } : user)
         );
-        if (isHostRef.current) broadcastUserList();
+        if (isHost.current) broadcastUserList();
         break;
       case 'start':
         setGameStarted(true);
@@ -134,7 +129,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   };
 
   const broadcastMessage = (data, excludePeerId = null) => {
-    connectionsRef.current.forEach(connection => {
+    connections.current.forEach(connection => {
       if (connection.peer !== excludePeerId) {
         connection.send(data);
       }
@@ -146,8 +141,8 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
     if (message) {
       const data = { type: 'message', from: peerId, text: message };
       setMessages([...messages, { from: peerId, text: message }]);
-      if (isHostRef.current) broadcastMessage(data);
-      else connectionsRef.current.forEach(connection => connection.send(data));
+      if (isHost.current) broadcastMessage(data);
+      else connections.current.forEach(connection => connection.send(data));
       messageRef.current.value = '';
     }
   };
@@ -155,25 +150,25 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   const handleReady = () => {
     setReady(true);
     const data = { type: 'ready', id: peerId };
-    if (isHostRef.current) broadcastUserList();
-    else connectionsRef.current.forEach(connection => connection.send(data));
+    if (isHost.current) broadcastUserList();
+    else connections.current.forEach(connection => connection.send(data));
   };
 
   const handleStartGame = () => {
     if (users.every(user => user.id === peerId || user.ready)) {
       const data = { type: 'start' };
-      connectionsRef.current.forEach(connection => connection.send(data));
+      connections.current.forEach(connection => connection.send(data));
       setGameStarted(true);
     }
   };
 
   const broadcastUserList = () => {
     const data = { type: 'user-list', users };
-    connectionsRef.current.forEach(connection => connection.send(data));
+    connections.current.forEach(connection => connection.send(data));
   };
 
   useEffect(() => {
-    if (isHostRef.current) broadcastUserList();
+    if (isHost.current) broadcastUserList();
   }, [users]);
 
   return (
@@ -190,7 +185,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
               ))}
             </ul>
             <div>
-              {isHost ? (
+              {isHost.current ? (
                 <button onClick={handleStartGame} disabled={!users.every(user => user.id === peerId || user.ready)}>게임 시작</button>
               ) : (
                 <button onClick={handleReady} disabled={ready}>준비 완료</button>
