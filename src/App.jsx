@@ -63,20 +63,21 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   const connections = useRef([]);
   const isHost = useRef(false);
   const usersRef = useRef(users);
+  const idPrefix = "user-";
 
   useEffect(() => {
-    const newPeer = new Peer();
+    const newPeer = new Peer(idPrefix + createRandomId());
     setPeer(newPeer);
 
     newPeer.on('open', id => {
       setPeerId(id);
       if (isCreatingRoom) {
-        setCurrentRoomId(id);
+        setCurrentRoomId(id.slice(idPrefix.length));
         isHost.current = true;
         setUsers([{ id, name: nickname, ready: false }]);
       } else {
         setCurrentRoomId(roomId);
-        const con = newPeer.connect(roomId);
+        const con = newPeer.connect(idPrefix + roomId);
         con.on('open', () => {
           connections.current.push(con);
           con.on('data', data => handleData(data, con));
@@ -104,9 +105,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
         break;
       case 'user':
         setUsers(prevUsers => {
-          if (!prevUsers.some(user => user.id === data.user.id)) {
-            return [...prevUsers, data.user];
-          }
+          if (!prevUsers.some(user => user.id === data.user.id)) return [...prevUsers, data.user];
           return prevUsers;
         });
         if (isHost.current) broadcastUserList();
@@ -115,9 +114,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
         setUsers(data.users);
         break;
       case 'ready':
-        setUsers(prevUsers =>
-          prevUsers.map(user => user.id === data.id ? { ...user, ready: true } : user)
-        );
+        setUsers(prevUsers => prevUsers.map(user => user.id === data.id ? { ...user, ready: true } : user));
         if (isHost.current) broadcastUserList();
         break;
       case 'start':
@@ -128,11 +125,13 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
     }
   };
 
+  const createRandomId = () => {
+    return Math.random().toString(36).slice(2, 7).toUpperCase();
+  }
+
   const broadcastMessage = (data, excludePeerId = null) => {
     connections.current.forEach(connection => {
-      if (connection.peer !== excludePeerId) {
-        connection.send(data);
-      }
+      if (connection.peer !== excludePeerId) connection.send(data);
     });
   };
 
