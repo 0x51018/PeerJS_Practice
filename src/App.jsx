@@ -4,7 +4,7 @@ import './App.css';
 
 const App = () => (
   <div className="app">
-    <h1>P2P 보드게임 웹 서비스 프로토타입</h1>
+    <h2>P2P 웹 서비스 프로토타입</h2>
     <MainPage />
   </div>
 );
@@ -62,7 +62,6 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   const messageRef = useRef();
   const connections = useRef([]);
   const isHost = useRef(false);
-  const usersRef = useRef(users);
   const idPrefix = "user-";
 
   useEffect(() => {
@@ -77,18 +76,29 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
         setUsers([{ id, name: nickname, ready: false }]);
       } else {
         setCurrentRoomId(roomId);
-        const con = newPeer.connect(idPrefix + roomId);
-        con.on('open', () => {
-          connections.current.push(con);
-          con.on('data', data => handleData(data, con));
-          con.send({ type: 'user', user: { id, name: nickname, ready: false } });
+        const conn = newPeer.connect(idPrefix + roomId);
+        conn.on('open', () => {
+          connections.current.push(conn);
+          conn.on('data', data => handleData(data, conn));
+          conn.send({ type: 'user', user: { id, name: nickname, ready: false } });
         });
       }
     });
 
     newPeer.on('connection', connection => {
       connection.on('data', data => handleData(data, connection));
+
+      connection.peerConnection.oniceconnectionstatechange = () => {
+        const state = connection.peerConnection.iceConnectionState;
+        if (state === 'disconnected' || state === 'failed') {
+          console.log(`Peer ${connection.peer} is disconnected`);
+          connections.current = connections.current.filter(conn => conn.peer !== connection.peer);
+          setUsers(prevUsers => prevUsers.filter(user => user.id !== connection.peer));
+        }
+      };
+
       connection.on('open', () => {
+        console.log('Connection opened:', connection.peer);
         connections.current.push(connection);
         connection.send({ type: 'user', user: { id: connection.peer, name: nickname, ready: false } });
       });
@@ -121,6 +131,7 @@ const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
         setGameStarted(true);
         break;
       default:
+        console.warn(`Unknown data type: ${data.type}`);
         break;
     }
   };
