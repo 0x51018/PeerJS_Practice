@@ -4,6 +4,8 @@ import { GamePage } from './GamePage';
 import { Container, Box, Typography, List, ListItem, ListItemText, Button, TextField, Paper, Grid } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendIcon from '@mui/icons-material/Send';
+import StarsIcon from '@mui/icons-material/Stars';
+import PersonIcon from '@mui/icons-material/Person';
 import Tooltip from '@mui/material/Tooltip';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 
@@ -191,9 +193,18 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
                     <ListItemText
                       primary={
                         <Box display="flex" alignItems="center">
-                          {user.name}{user.id === peerId ? ' (나)' : ''}
+                          {user.name}
+                          {(user.id === peerId) && (
+                            <PersonIcon sx={{ ml: 1, color: 'blue' }} />
+                          )}
+                          {(isHost.current && user.id === peerId || !isHost.current && user.id === idPrefix+roomId) && (
+                            <StarsIcon sx={{ ml: 1, color: 'gold' }} />
+                          )}
                           {user.ready && (
                             <CheckCircleIcon color="success" sx={{ ml: 1 }} />
+                          )}
+                          {(isHost.current && user.id !== peerId && !user.ready || !isHost.current && !user.ready && user.id !== idPrefix+roomId) && (
+                            <CheckCircleIcon color="disabled" sx={{ ml: 1 }} />
                           )}
                         </Box>
                       }
