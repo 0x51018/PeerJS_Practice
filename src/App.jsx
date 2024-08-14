@@ -1,12 +1,15 @@
 import React from 'react';
 import {MainPage} from './components/Mainpage';
-import './App.css';
+import { Container, Box } from '@mui/material';
 
-const App = () => (
-  <div className="app">
-    <h2>P2P 웹 서비스 프로토타입</h2>
-    <MainPage />
-  </div>
-);
+const App = () => {
+  return (
+    <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <Box sx={{ width: '100%' }}>
+        <MainPage />
+      </Box>
+    </Container>
+  );
+};
 
 export default App;

@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
 import { GamePage } from './GamePage';
+import { Container, Box, Typography, List, ListItem, ListItemText, Button, TextField, Paper, Grid } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SendIcon from '@mui/icons-material/Send';
+import Tooltip from '@mui/material/Tooltip';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
 
 export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }) => {
   const [peer, setPeer] = useState(null);
@@ -9,6 +14,7 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
   const [ready, setReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentRoomId, setCurrentRoomId] = useState('');
+  const [copyTooltipOpen, setCopyTooltipOpen] = useState(false);
   const messageRef = useRef();
   const connections = useRef([]);
   const isHost = useRef(false);
@@ -129,46 +135,183 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
     connections.current.forEach(connection => connection.send(data));
   };
 
+  const handleCopyRoomCode = () => {
+    navigator.clipboard.writeText(currentRoomId);
+    setCopyTooltipOpen(true);
+  };
+
+  const handleTooltipClose = () => {
+    setCopyTooltipOpen(false);
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  };
+
   return (
-    <div className="chat-room">
+    <Container 
+      maxWidth={'xl'} 
+      sx={{ 
+        width: '95%', 
+        mt: 4, 
+        minHeight: '80vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}
+    >
       {!gameStarted ? (
-        <div className="room-container">
-          <div className="user-list">
-            <h2>유저 목록</h2>
-            <ul>
-              {users.map(user => (
-                <li key={user.id} className={user.id === peerId ? 'me' : ''}>
-                  {user.name} {user.ready && '(준비 완료)'}
-                </li>
-              ))}
-            </ul>
-            <div>
-              {isHost.current ? (
-                <button onClick={handleStartGame} disabled={!users.every(user => user.id === peerId || user.ready)}>게임 시작</button>
-              ) : (
-                <button onClick={handleReady} disabled={ready}>준비 완료</button>
-              )}
-            </div>
-            <div className="room-info">
-              <p>방 코드: {currentRoomId}</p>
-            </div>
-          </div>
-          <div className="message-container">
-            <h2>메시지</h2>
-            <ul>
-              {messages.map((msg, index) => (
-                <li key={index} className={msg.from === peerId ? 'me' : ''}>
-                  {msg.from === peerId ? `${nickname} (me)` : users.find(user => user.id === msg.from)?.name || 'Unknown'}: {msg.text}
-                </li>
-              ))}
-            </ul>
-            <input type="text" placeholder="메시지 입력" ref={messageRef} />
-            <button onClick={sendMessage}>보내기</button>
-          </div>
-        </div>
+        <Grid container spacing={4} justifyContent="center" alignItems="stretch">
+          <Grid item xs={12} md={4}>
+            <Paper elevation={3} sx={{ p: 3, height: '100%', position: 'relative' }}>
+              <Typography variant="h5" gutterBottom>
+                유저 목록
+              </Typography>
+              <List>
+                {users.map(user => (
+                  <ListItem 
+                    key={user.id} 
+                    sx={{
+                      border: user.id === peerId ? '2px solid blue' : '1px solid black',
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box display="flex" alignItems="center">
+                          {user.name}{user.id === peerId ? ' (나)' : ''}
+                          {user.ready && (
+                            <CheckCircleIcon color="success" sx={{ ml: 1 }} />
+                          )}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+              <Box mt={2} textAlign="center">
+                {isHost.current ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleStartGame}
+                    disabled={!users.every(user => user.id === peerId || user.ready)}
+                  >
+                    게임 시작
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleReady}
+                    disabled={ready}
+                  >
+                    준비 완료
+                  </Button>
+                )}
+              </Box>
+              <Box 
+                mt={2} 
+                textAlign="center"
+                sx={{
+                  position: 'absolute',
+                  bottom: '16px', 
+                  left: '50%', 
+                  transform: 'translateX(-50%)',
+                  width: '100%',
+                }}
+              >
+                <ClickAwayListener onClickAway={handleTooltipClose}>
+                  <Tooltip
+                    title="복사됨!"
+                    open={copyTooltipOpen}
+                    disableFocusListener
+                    disableHoverListener
+                    disableTouchListener
+                    onClose={handleTooltipClose}
+                    leaveDelay={1500}
+                    PopperProps={{
+                      disablePortal: true,
+                    }}
+                  >
+                    <Typography 
+                      variant="h5" 
+                      color="primary" 
+                      onClick={handleCopyRoomCode} 
+                      sx={{ 
+                        cursor: 'pointer', 
+                        textDecoration: 'underline',
+                        '&:hover': {
+                          textDecoration: 'underline',
+                        },
+                      }}
+                    >
+                      {currentRoomId}
+                    </Typography>
+                  </Tooltip>
+                </ClickAwayListener>
+              </Box>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={8}>
+            <Paper elevation={3} sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="h5" gutterBottom>
+                메시지
+              </Typography>
+              <List 
+                sx={{ 
+                  flexGrow: 1, 
+                  overflowY: 'auto', 
+                  fontFamily: 'monospace', 
+                  fontSize: '1.4rem', // 폰트 크기 증가
+                  lineHeight: '1.4',
+                  height: '400px',
+                }}
+              >
+                {messages.map((msg, index) => (
+                  <ListItem 
+                    key={index} 
+                    sx={{ 
+                      paddingTop: '4px', 
+                      paddingBottom: '4px',
+                      borderBottom: '1px solid #ccc',
+                    }}
+                  >
+                    <ListItemText
+                      primary={`${users.find(user => user.id === msg.from)?.name || 'Unknown'} : ${msg.text}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+              <Box mt={2} display="flex">
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="메시지 입력"
+                  inputRef={messageRef}
+                  onKeyPress={handleKeyPress}
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={sendMessage}
+                  sx={{ ml: 1, minWidth: '50px', padding: '8px' }}
+                >
+                  <SendIcon />
+                </Button>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
       ) : (
         <GamePage users={users} />
       )}
-    </div>
+    </Container>
   );
 };

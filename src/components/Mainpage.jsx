@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { TextField, Button, Typography, Container, Box, Grid, Paper } from '@mui/material';
 import { ChatRoom } from './ChatRoom';
 
 export const MainPage = () => {
@@ -68,29 +69,67 @@ export const MainPage = () => {
   };
 
   return (
-    <div className="main-page">
-      {page === 'main' ? (
-        <div className="main-options">
-          <input
-            type="text"
-            placeholder="Enter Nickname"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-          />
-          <span className="error">{nicknameError}</span>
-          <button onClick={handleCreateRoom} disabled={!nickname}>Create Room</button>
-          <input
-            type="text"
-            placeholder="Enter Room Code"
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-          />
-          <span className="error">{roomIdError}</span>
-          <button onClick={handleJoinRoom} disabled={!roomId || !nickname}>Join Room</button>
-        </div>
-      ) : (
-        <ChatRoom roomId={roomId} peerId={peerId} setPeerId={setPeerId} nickname={nickname} isCreatingRoom={isCreatingRoom} />
-      )}
-    </div>
+    <Container maxWidth={false}>
+      <Box mt={8}>
+        {page === 'main' ? (
+          <Container maxWidth="sm">
+            <Paper elevation={5} sx={{ padding: 5 }}>
+              <Typography variant="h4" align="center" gutterBottom>
+                Start a New Game <br/>or<br/>Join an Existing One
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Enter Nickname"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    margin="normal"
+                    error={Boolean(nicknameError)}
+                    helperText={nicknameError}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleCreateRoom}
+                    disabled={!nickname}
+                    fullWidth
+                  >
+                    Create Room
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Enter Room Code"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    margin="normal"
+                    error={Boolean(roomIdError)}
+                    helperText={roomIdError}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleJoinRoom}
+                    disabled={!roomId || !nickname}
+                    fullWidth
+                  >
+                    Join Room
+                  </Button>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Container>
+          
+        ) : (
+          <ChatRoom roomId={roomId} peerId={peerId} setPeerId={setPeerId} nickname={nickname} isCreatingRoom={isCreatingRoom} />
+        )}
+      </Box>
+    </Container>
   );
 };
