@@ -197,6 +197,7 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
                           {(user.id === peerId) && (
                             <PersonIcon sx={{ ml: 1, color: 'blue' }} />
                           )}
+                          <Box sx={{ flexGrow: 1 }} />
                           {(isHost.current && user.id === peerId || !isHost.current && user.id === idPrefix+roomId) && (
                             <StarsIcon sx={{ ml: 1, color: 'gold' }} />
                           )}
@@ -238,7 +239,7 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
                 textAlign="center"
                 sx={{
                   position: 'absolute',
-                  bottom: '16px', 
+                  bottom: '18px', 
                   left: '50%', 
                   transform: 'translateX(-50%)',
                   width: '100%',
@@ -258,15 +259,19 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
                     }}
                   >
                     <Typography 
-                      variant="h5" 
-                      color="primary" 
-                      onClick={handleCopyRoomCode} 
+                      variant="h4" 
+                      color="rgba(0, 120, 0, 0.84)" 
+                      onClick={() => {
+                        handleCopyRoomCode();
+                        setTimeout(handleTooltipClose, 700);
+                      }} 
                       sx={{ 
                         cursor: 'pointer', 
                         textDecoration: 'underline',
                         '&:hover': {
                           textDecoration: 'underline',
                         },
+                        fontWeight: 'bold',
                       }}
                     >
                       {currentRoomId}
