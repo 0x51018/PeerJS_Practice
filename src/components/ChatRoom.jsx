@@ -19,6 +19,7 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
   const connections = useRef([]);
   const isHost = useRef(false);
   const idPrefix = "user-";
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     const newPeer = new Peer(idPrefix + createRandomId());
@@ -64,6 +65,12 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
   useEffect(() => {
     if (isHost.current) broadcastUserList();
   }, [users]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
   
   const handleData = (data, connection) => {
     switch (data.type) {
@@ -269,7 +276,7 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
                   flexGrow: 1, 
                   overflowY: 'auto', 
                   fontFamily: 'monospace', 
-                  fontSize: '1.4rem', // 폰트 크기 증가
+                  fontSize: '1.4rem',
                   lineHeight: '1.4',
                   height: '400px',
                 }}
@@ -288,6 +295,7 @@ export const ChatRoom = ({ roomId, peerId, setPeerId, nickname, isCreatingRoom }
                     />
                   </ListItem>
                 ))}
+                <div ref={messagesEndRef} />
               </List>
               <Box mt={2} display="flex">
                 <TextField
